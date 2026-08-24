@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bookmark, Clapperboard, Home, Search, Settings, X } from 'lucide-react';
+import { Bookmark, Clapperboard, Home, Settings, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { TabType } from '../types';
 
@@ -12,7 +12,6 @@ export const SideDrawer: React.FC<SideDrawerProps> = ({ isOpen, onClose, current
   const navigate = (tab: TabType) => { onTabChange(tab); onClose(); };
   const links = [
     { id: 'home' as TabType, label: 'Home', icon: <Home className="w-5 h-5" /> },
-    { id: 'search' as TabType, label: 'Find a song', icon: <Search className="w-5 h-5" /> },
     { id: 'favorites' as TabType, label: 'Saved songs', icon: <Bookmark className="w-5 h-5" /> },
     { id: 'media' as TabType, label: 'Watch & listen', icon: <Clapperboard className="w-5 h-5" /> },
   ];
