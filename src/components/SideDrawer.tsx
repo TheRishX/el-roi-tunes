@@ -1,7 +1,7 @@
 import React from 'react';
 import { Bookmark, Home, Search, Settings, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { TabType, UserSettings } from '../types';
+import { TabType } from '../types';
 
 interface SideDrawerProps {
   isOpen: boolean; onClose: () => void; currentTab: TabType; onTabChange: (tab: TabType) => void;
