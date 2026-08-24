@@ -202,7 +202,7 @@ class AudioSynthService {
 
 export const audioSynth = new AudioSynthService();
 
-// Web Speech API Voice Reader for Seniors
+// Web Speech API voice reader
 export class SpeechReaderService {
   private utterance: SpeechSynthesisUtterance | null = null;
 

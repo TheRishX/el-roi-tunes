@@ -12,6 +12,7 @@ export interface Song {
   tempo?: string;
   videoUrl?: string;
   audioUrl?: string;
+  mediaLinks?: string[];
   isPinned: boolean;
   isFavorite: boolean;
   views: number;

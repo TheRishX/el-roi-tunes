@@ -12,6 +12,8 @@ import {
   Minus,
   Moon,
   MoveUpRight,
+  Maximize2,
+  Minimize2,
   Music,
   Pause,
   Play,
@@ -60,6 +62,7 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
   const [showTypographySheet, setShowTypographySheet] = useState<boolean>(false);
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [isFullPage, setIsFullPage] = useState<boolean>(false);
 
   // Audio / Karaoke Sync state
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
@@ -76,6 +79,10 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
   // Transposed lyrics & chords
   const currentChordsText = transposeChordsText(song.chordsLyrics, semitones);
   const parsedLines = parseChordLyrics(currentChordsText);
+  const mediaLinks = song.mediaLinks?.length
+    ? song.mediaLinks
+    : [song.videoUrl, song.audioUrl].filter((link): link is string => Boolean(link));
+  const playableVideoUrl = song.videoUrl || mediaLinks.find((link) => /youtube\.com|youtu\.be/i.test(link));
 
   // Auto-scroll loop
   useEffect(() => {
@@ -207,7 +214,7 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
       className={`fixed inset-0 z-50 overflow-hidden flex flex-col ${getThemeClasses()}`}
     >
       {/* Top Header Bar (matching Image 5.png) */}
-      <header className="shrink-0 h-16 px-4 sm:px-6 flex items-center justify-between border-b border-[#e5e2e1]/80 ios-glass z-20">
+      <header className={`${isFullPage ? 'hidden' : 'flex'} shrink-0 h-16 px-4 sm:px-6 items-center justify-between border-b border-[#e5e2e1]/80 ios-glass z-20`}>
         <button
           id="btn-close-song-detail"
           onClick={() => {
@@ -257,16 +264,44 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
           >
             <Share2 className="w-5 h-5" />
           </button>
+
+          <button
+            onClick={() => setIsFullPage(true)}
+            title="Open full page reader"
+            aria-label="Open full page reader"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-[#5d5f5f] hover:bg-[#3e5219]/10 active:scale-90 transition-all"
+          >
+            <Maximize2 className="w-5 h-5" />
+          </button>
         </div>
       </header>
+
+      {isFullPage && (
+        <div className="fixed top-3 right-3 z-30">
+          <button
+            onClick={() => setIsFullPage(false)}
+            aria-label="Exit full page reader"
+            className="flex min-h-11 items-center gap-2 rounded-full bg-black/65 px-4 text-sm font-semibold text-white shadow-lg backdrop-blur-md"
+          >
+            <Minimize2 className="w-4 h-4" /> Exit full page
+          </button>
+        </div>
+      )}
 
       {/* Main Scrollable Canvas */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto hide-scrollbar px-4 sm:px-6 py-6 max-w-3xl mx-auto w-full relative space-y-6"
+        className={`flex-1 overflow-y-auto hide-scrollbar w-full relative space-y-6 ${isFullPage ? 'max-w-5xl mx-auto px-4 sm:px-10 py-14' : 'max-w-3xl mx-auto px-4 sm:px-6 py-6'}`}
       >
+        {isFullPage && (
+          <div className="border-b border-current/10 pb-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] opacity-60">Full page reader</p>
+            <h2 className="mt-1 font-serif text-3xl sm:text-4xl">{song.title}</h2>
+            <p className="mt-1 text-sm opacity-65">{song.artist}</p>
+          </div>
+        )}
         {/* Song Info Header */}
-        <section className="text-center pt-2 space-y-1.5">
+        {!isFullPage && <section className="text-center pt-2 space-y-1.5">
           <h2
             className={`font-bold tracking-tight text-[#1c1b1b] ${
               userSettings.fontFamily === 'serif' ? 'font-serif' : 'font-sans'
@@ -293,10 +328,10 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
             <span>•</span>
             <span>{song.category}</span>
           </div>
-        </section>
+        </section>}
 
         {/* Segmented Control Tabs (matching Image 5.png: [ Lyrics ] [ Chords ] [ ▷ Video ]) */}
-        <section className="flex items-center justify-center gap-3">
+        {!isFullPage && <section className="flex items-center justify-center gap-3">
           <button
             id="tab-mode-lyrics"
             onClick={() => setViewMode('lyrics')}
@@ -333,10 +368,10 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
             <Play className="w-3.5 h-3.5 fill-current" />
             <span>Video & Audio</span>
           </button>
-        </section>
+        </section>}
 
         {/* Chords Transposer Tool Bar (When in Chords mode) */}
-        {viewMode === 'chords' && (
+        {!isFullPage && viewMode === 'chords' && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -376,81 +411,17 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
           </motion.div>
         )}
 
-        {/* Auto-Scroll & Voice Reading Quick Control Bar */}
-        <section className="bg-white/90 backdrop-blur-md rounded-2xl p-3 soft-card border border-[#e5e7eb] flex items-center justify-between gap-3 text-xs">
-          {/* Auto Scroll */}
-          <div className="flex items-center gap-2 flex-1">
-            <button
-              onClick={() => setIsAutoScrolling(!isAutoScrolling)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all ${
-                isAutoScrolling
-                  ? 'bg-[#ba1a1a] text-white shadow-sm'
-                  : 'bg-[#3e5219] text-white hover:bg-[#2c3c0f]'
-              }`}
-            >
-              {isAutoScrolling ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-white" />}
-              <span>{isAutoScrolling ? 'Stop Scroll' : 'Auto Scroll'}</span>
-            </button>
-
-            {isAutoScrolling && (
-              <div className="flex items-center gap-1 text-[11px] text-[#5d5f5f]">
-                <span>Speed:</span>
-                <input
-                  type="range"
-                  min="1"
-                  max="8"
-                  value={scrollSpeed}
-                  onChange={(e) => setScrollSpeed(Number(e.target.value))}
-                  className="w-16 accent-[#3e5219]"
-                />
-                <span className="font-mono">{scrollSpeed}x</span>
-              </div>
-            )}
-          </div>
-
-          {/* Voice Reader & Copy */}
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={handleToggleSpeech}
-              title={isSpeaking ? 'Stop Voice Reader' : 'Listen Voice Reader (Read Aloud)'}
-              className={`p-2 rounded-xl border transition-all ${
-                isSpeaking
-                  ? 'bg-[#3e5219] text-white border-[#3e5219]'
-                  : 'bg-white text-[#3e5219] border-[#e5e2e1] hover:bg-[#f0eded]'
-              }`}
-            >
-              {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-            </button>
-
-            <button
-              onClick={handleCopy}
-              title="Copy text"
-              className="p-2 rounded-xl bg-white border border-[#e5e2e1] text-[#5d5f5f] hover:text-[#1c1b1b] hover:bg-[#f0eded] transition-colors"
-            >
-              {isCopied ? <Check className="w-4 h-4 text-[#3e5219]" /> : <Copy className="w-4 h-4" />}
-            </button>
-
-            <button
-              onClick={handlePrint}
-              title="Print Sheet"
-              className="p-2 rounded-xl bg-white border border-[#e5e2e1] text-[#5d5f5f] hover:text-[#1c1b1b] hover:bg-[#f0eded] transition-colors"
-            >
-              <Printer className="w-4 h-4" />
-            </button>
-          </div>
-        </section>
-
         {/* Content Card (matching Image 5.png container style) */}
         {viewMode === 'video' ? (
           /* Video & Audio Player Tab */
           <div className="space-y-6">
-            {song.videoUrl ? (
+            {playableVideoUrl ? (
               <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-lg border border-[#e5e7eb] bg-black">
                 <iframe
                   src={
-                    song.videoUrl.includes('watch?v=')
-                      ? song.videoUrl.replace('watch?v=', 'embed/')
-                      : song.videoUrl
+                    playableVideoUrl.includes('watch?v=')
+                      ? playableVideoUrl.replace('watch?v=', 'embed/')
+                      : playableVideoUrl
                   }
                   title={`${song.title} video player`}
                   className="w-full h-full border-0"
@@ -465,6 +436,26 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
                 <p className="text-xs text-[#5d5f5f]">
                   You can attach a YouTube URL for this hymn in the song editor.
                 </p>
+              </div>
+            )}
+
+            {mediaLinks.length > 0 && (
+              <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4 space-y-3">
+                <h3 className="font-semibold text-[#1c1b1b]">Listen or watch</h3>
+                <div className="space-y-2">
+                  {mediaLinks.map((link, index) => (
+                    <a
+                      key={`${link}-${index}`}
+                      href={link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex min-h-11 items-center justify-between rounded-xl bg-[#f6f3f2] px-3 text-sm font-medium text-[#3e5219] hover:bg-[#e8eee1]"
+                    >
+                      <span className="truncate pr-3">{/music\.youtube/i.test(link) ? 'Open YouTube Music' : /youtube|youtu\.be/i.test(link) ? 'Open YouTube video' : `Open media link ${index + 1}`}</span>
+                      <Youtube className="w-4 h-4 shrink-0" />
+                    </a>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -516,7 +507,7 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
           /* Lyrics & Chords Main Card */
           <div
             id="lyrics-content-card"
-            className={`bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-10 soft-card-elevated border border-[#e5e7eb] relative ${getLineHeightClass()}`}
+            className={`${isFullPage ? 'bg-transparent p-2 sm:p-8' : 'bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-10 soft-card-elevated border border-[#e5e7eb]'} relative ${getLineHeightClass()}`}
             style={{ fontSize: `${effectiveFontSize}px` }}
           >
             {viewMode === 'lyrics' ? (
@@ -576,8 +567,8 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
         <div className="h-20" />
       </div>
 
-      {/* Floating [ Aa ] Senior & Typography Action Button (matching Image 5.png) */}
-      <div className="fixed bottom-6 right-6 z-30">
+      {/* Floating reading controls */}
+      <div className={`${isFullPage ? 'hidden' : 'block'} fixed bottom-6 right-6 z-30`}>
         <motion.button
           id="btn-floating-typography-controller"
           whileHover={{ scale: 1.05 }}
@@ -590,7 +581,7 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
         </motion.button>
       </div>
 
-      {/* Typography & Senior Accessibility Bottom Sheet */}
+      {/* Typography sheet */}
       <AnimatePresence>
         {showTypographySheet && (
           <>
@@ -612,7 +603,7 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
                 <div className="flex items-center gap-2">
                   <Type className="w-5 h-5 text-[#3e5219]" />
                   <h3 className="font-serif text-lg font-bold text-[#1c1b1b]">
-                    Reading & Accessibility Settings
+                    Reading settings
                   </h3>
                 </div>
                 <button
@@ -620,35 +611,6 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
                   className="p-1 text-[#5d5f5f] hover:text-[#1c1b1b]"
                 >
                   <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* 1-Tap Senior Mode Toggle */}
-              <div className="bg-[#3e5219]/10 border border-[#3e5219]/30 rounded-2xl p-4 flex items-center justify-between">
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-[#1c1b1b]">
-                    Senior Extra-Large Mode
-                  </h4>
-                  <p className="text-xs text-[#5d5f5f]">
-                    Optimal high-contrast large font for easy singing & reading
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    const next = !userSettings.seniorMode;
-                    onUpdateSettings({
-                      seniorMode: next,
-                      fontSize: next ? 26 : 18,
-                      lineSpacing: next ? 'spacious' : 'relaxed',
-                    });
-                  }}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                    userSettings.seniorMode
-                      ? 'bg-[#3e5219] text-white shadow-sm'
-                      : 'bg-white text-[#3e5219] border border-[#3e5219]'
-                  }`}
-                >
-                  {userSettings.seniorMode ? 'Enabled (26px)' : 'Enable'}
                 </button>
               </div>
 
