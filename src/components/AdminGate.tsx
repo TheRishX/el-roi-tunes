@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { LockKeyhole, X } from 'lucide-react';
 import { motion } from 'motion/react';
+import { api } from '../services/sqlDb';
 
 interface AdminGateProps { onClose: () => void; onSuccess: () => void; }
 
@@ -9,7 +10,7 @@ export const AdminGate: React.FC<AdminGateProps> = ({ onClose, onSuccess }) => {
   const [error, setError] = useState(false);
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    try { const response = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ passcode }) }); if (response.ok) { onSuccess(); return; } } catch { /* show the same safe error for unavailable API and invalid credentials */ }
+    try { const response = await fetch(api('/admin/login'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ passcode }) }); if (response.ok) { onSuccess(); return; } } catch { /* show the same safe error for unavailable API and invalid credentials */ }
     setError(true); setPasscode('');
   };
   return <div className="fixed inset-0 z-[70] bg-[#17241a]/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">

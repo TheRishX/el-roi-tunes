@@ -23,8 +23,9 @@ export default function App() {
   const [adminGateOpen, setAdminGateOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('All');
+  const [loadError, setLoadError] = useState('');
 
-  useEffect(() => { sqlDb.ready.then(() => { setSongs(sqlDb.getSongs()); setCategories(sqlDb.getCategories()); setSettings(sqlDb.getSettings()); }); }, []);
+  useEffect(() => { sqlDb.ready.then(() => { setSongs(sqlDb.getSongs()); setCategories(sqlDb.getCategories()); setSettings(sqlDb.getSettings()); }).catch((error: Error) => setLoadError(error.message || 'Unable to connect to the song database.')); }, []);
 
   const refreshSongs = () => setSongs(sqlDb.getSongs());
   const updateSettings = (changes: Partial<UserSettings>) => { void sqlDb.updateSettings(changes).then(setSettings); };
@@ -45,6 +46,8 @@ export default function App() {
   };
   const openAdminGate = () => setAdminGateOpen(true);
   const saveSong = (data: Omit<Song, 'id' | 'createdAt' | 'views'>, id?: string) => { void (id ? sqlDb.updateSong(id, data) : sqlDb.addSong(data)).then(refreshData); };
+
+  if (loadError) return <div className="flex min-h-screen items-center justify-center bg-[#fbfaf7] px-6 text-center"><div><h1 className="font-serif text-3xl text-[#29402a]">Song library unavailable</h1><p className="mt-3 max-w-md text-sm text-[#718073]">The app could not reach the SQL database. No browser copy was loaded, so your library cannot drift between browsers.</p><button onClick={() => window.location.reload()} className="mt-6 rounded-xl bg-[#29402a] px-5 py-3 text-sm font-semibold text-white">Try again</button></div></div>;
 
   return (
     <div className="min-h-screen bg-[#fbfaf7] text-[#1c2a1f] relative overflow-x-hidden font-sans selection:bg-[#dce7d5] selection:text-[#29402a]">
