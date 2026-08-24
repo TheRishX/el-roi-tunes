@@ -34,7 +34,6 @@ export interface Category {
 }
 
 export interface UserSettings {
-  seniorMode: boolean;
   fontSize: number; // 14 to 34
   fontFamily: 'serif' | 'sans';
   themeMode: 'light' | 'sepia' | 'dark' | 'high-contrast';
@@ -44,13 +43,5 @@ export interface UserSettings {
   hapticFeedback: boolean;
 }
 
-export type TabType = 'home' | 'search' | 'favorites' | 'admin' | 'categories';
+export type TabType = 'home' | 'search' | 'favorites';
 export type SongViewMode = 'lyrics' | 'chords' | 'video';
-
-export interface AdminStats {
-  totalSongs: number;
-  totalCategories: number;
-  activeUsers: number;
-  weeklySongGrowth: number;
-  monthlyUserGrowth: number;
-}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { TabType } from '../types';
-import { Bookmark, FolderTree, Home, Search, ShieldAlert } from 'lucide-react';
+import { Bookmark, Home, Search } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface BottomNavBarProps {
@@ -23,8 +23,6 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
       icon: <Bookmark className="w-5 h-5" />,
       badge: favoritesCount > 0 ? favoritesCount : undefined,
     },
-    { id: 'categories', label: 'Genres', icon: <FolderTree className="w-5 h-5" /> },
-    { id: 'admin', label: 'Admin', icon: <ShieldAlert className="w-5 h-5" /> },
   ];
 
   return (

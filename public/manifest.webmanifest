@@ -1,0 +1,13 @@
+{
+  "name": "El Roi Tunes",
+  "short_name": "El Roi Tunes",
+  "description": "Christian lyrics and chords in Hindi, English, and Nepali.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbfaf7",
+  "theme_color": "#29402a",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

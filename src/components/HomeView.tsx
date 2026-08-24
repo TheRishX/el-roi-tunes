@@ -1,377 +1,59 @@
 import React, { useState } from 'react';
-import { Category, Song, TabType, UserSettings } from '../types';
-import {
-  Bookmark,
-  ChevronRight,
-  Headphones,
-  Music,
-  Play,
-  Plus,
-  Search,
-  Sparkles,
-  Volume2,
-} from 'lucide-react';
+import { Bookmark, ChevronRight, Heart, Languages, Play, Search, Volume2 } from 'lucide-react';
+import { Category, Song, TabType } from '../types';
 import { motion } from 'motion/react';
 import { speechReader } from '../utils/chordUtils';
 
 interface HomeViewProps {
-  songs: Song[];
-  categories: Category[];
-  onSelectSong: (song: Song) => void;
-  onSelectCategory: (categoryId: string) => void;
-  onTabChange: (tab: TabType) => void;
+  songs: Song[]; categories: Category[]; onSelectSong: (song: Song) => void;
+  onSelectCategory: (categoryId: string) => void; onTabChange: (tab: TabType) => void;
   onTogglePin: (songId: string) => void;
-  userSettings: UserSettings;
-  onOpenAddSong: () => void;
 }
 
-export const HomeView: React.FC<HomeViewProps> = ({
-  songs,
-  categories,
-  onSelectSong,
-  onSelectCategory,
-  onTabChange,
-  onTogglePin,
-  userSettings,
-  onOpenAddSong,
-}) => {
-  const [searchInput, setSearchInput] = useState('');
-  const [isReadingAloud, setIsReadingAloud] = useState(false);
+const languageOptions = [
+  { label: 'हिंदी', value: 'Hindi', mark: 'हि' },
+  { label: 'English', value: 'English', mark: 'EN' },
+  { label: 'नेपाली', value: 'Nepali', mark: 'ने' },
+];
 
-  const pinnedSongs = songs.filter((s) => s.isPinned && s.status === 'Approved');
-  const recentSongs = songs.filter((s) => s.status === 'Approved').slice(0, 6);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onTabChange('search');
-  };
-
-  const handleReadDailyHymn = (song: Song) => {
-    if (isReadingAloud) {
-      speechReader.stop();
-      setIsReadingAloud(false);
-    } else {
-      setIsReadingAloud(true);
-      speechReader.speakLyrics(
-        `Reading ${song.title} by ${song.artist}. ${song.lyrics.slice(0, 300)}`,
-        () => setIsReadingAloud(false)
-      );
-    }
+export const HomeView: React.FC<HomeViewProps> = ({ songs, categories, onSelectSong, onSelectCategory, onTabChange, onTogglePin }) => {
+  const [query, setQuery] = useState('');
+  const [isReading, setIsReading] = useState(false);
+  const approved = songs.filter((song) => song.status === 'Approved');
+  const pinned = approved.filter((song) => song.isPinned);
+  const featured = pinned[0] || approved[0];
+  const recent = approved.slice(0, 5);
+  const submitSearch = (event: React.FormEvent) => { event.preventDefault(); onTabChange('search'); };
+  const readFeatured = () => {
+    if (!featured) return;
+    if (isReading) { speechReader.stop(); setIsReading(false); return; }
+    setIsReading(true); speechReader.speakLyrics(featured.lyrics, () => setIsReading(false));
   };
 
   return (
-    <div id="home-view" className="space-y-12 pb-16">
-      {/* Search Bar Section */}
-      <section className="mt-2">
-        <form onSubmit={handleSearchSubmit} className="relative max-w-2xl mx-auto">
-          <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-[#75796b]">
-            <Search className="w-5 h-5" />
-          </div>
-          <input
-            id="home-search-input"
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onFocus={() => onTabChange('search')}
-            placeholder="Search for hymns, artists, or categories..."
-            className="w-full pl-12 pr-4 py-4 bg-[#e3e3de]/80 focus:bg-white text-base text-[#1a1c19] placeholder:text-[#75796b] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3e5219] border border-[#e5e2e1] shadow-[0_12px_24px_-4px_rgba(85,107,47,0.03)] transition-all duration-200"
-          />
+    <div id="home-view" className="max-w-5xl mx-auto space-y-10 pb-10">
+      <section className="pt-4 sm:pt-8 text-center">
+        <p className="text-sm font-semibold tracking-[0.16em] uppercase text-[#a26b3d]">Your songbook</p>
+        <h2 className="font-serif text-4xl sm:text-6xl leading-[1.02] text-[#29402a] mt-3">Sing from the heart.</h2>
+        <p className="text-[#687166] mt-4 max-w-md mx-auto text-base sm:text-lg">Find Christian lyrics in the language that feels like home.</p>
+        <form onSubmit={submitSearch} className="relative max-w-xl mx-auto mt-7">
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7c8479]" />
+          <input id="home-search-input" value={query} onChange={(event) => setQuery(event.target.value)} onFocus={() => onTabChange('search')} placeholder="Search a song or hymn" aria-label="Search a song or hymn" className="w-full rounded-2xl border border-[#deddd3] bg-white pl-12 pr-4 py-4 text-base text-[#29402a] shadow-[0_12px_30px_-18px_rgba(41,64,42,.5)] outline-none focus:border-[#557b55] focus:ring-4 focus:ring-[#557b55]/10" />
         </form>
       </section>
 
-      {/* Senior Mode Banner Alert (if active) */}
-      {userSettings.seniorMode && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-[#3e5219]/10 border-2 border-[#3e5219] rounded-2xl p-4 sm:p-5 flex items-center justify-between shadow-sm"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#3e5219] text-white flex items-center justify-center shrink-0">
-              <Headphones className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-serif text-lg font-bold text-[#1c1b1b]">
-                Senior Reader Mode Active
-              </h3>
-              <p className="text-sm text-[#45483c]">
-                Large high-contrast text and simplified one-touch audio lyrics are enabled.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => onSelectSong(pinnedSongs[0] || songs[0])}
-            className="bg-[#3e5219] text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 active:scale-95 transition-all shrink-0"
-          >
-            Read Top Hymn
-          </button>
-        </motion.div>
-      )}
-
-      {/* Pinned Songs Carousel */}
-      <section id="section-pinned-songs">
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <div>
-            <h2 className="font-serif text-2xl sm:text-3xl font-semibold text-[#1c1b1b] tracking-tight">
-              Pinned Songs
-            </h2>
-            <p className="text-xs sm:text-sm text-[#5d5f5f]">
-              Hand-picked sacred hymns and featured melodies
-            </p>
-          </div>
-          <button
-            onClick={() => onTabChange('favorites')}
-            className="text-xs sm:text-sm font-semibold text-[#3e5219] hover:underline flex items-center gap-1"
-          >
-            View All ({pinnedSongs.length})
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="flex overflow-x-auto gap-5 hide-scrollbar snap-x pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-          {pinnedSongs.map((song) => (
-            <motion.article
-              key={song.id}
-              whileHover={{ y: -4 }}
-              transition={{ duration: 0.2 }}
-              className="flex-none w-[280px] sm:w-[300px] bg-white rounded-2xl soft-card snap-start overflow-hidden border border-[#e5e7eb] group cursor-pointer"
-              onClick={() => onSelectSong(song)}
-            >
-              {/* Cover Image */}
-              <div
-                className="w-full h-44 bg-cover bg-center relative transition-transform duration-500 group-hover:scale-105"
-                style={{ backgroundImage: `url('${song.coverImage}')` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                <div className="absolute top-3 left-3">
-                  <span className="bg-white/90 backdrop-blur-md text-[#3e5219] text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm">
-                    Key: {song.defaultKey}
-                  </span>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onTogglePin(song.id);
-                  }}
-                  aria-label="Toggle pin"
-                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-[#3e5219] hover:bg-white shadow-sm transition-transform active:scale-90"
-                >
-                  <Bookmark className="w-4 h-4 fill-[#3e5219]" />
-                </button>
-              </div>
-
-              {/* Card Body */}
-              <div className="p-4 flex items-center justify-between">
-                <div className="min-w-0 flex-1 pr-2">
-                  <h3 className="font-serif text-lg font-semibold text-[#1c1b1b] truncate group-hover:text-[#3e5219] transition-colors">
-                    {song.title}
-                  </h3>
-                  <p className="text-xs text-[#5d5f5f] truncate mt-0.5">{song.artist}</p>
-                </div>
-                <button
-                  id={`btn-play-pinned-${song.id}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectSong(song);
-                  }}
-                  aria-label={`Play ${song.title}`}
-                  className="w-11 h-11 bg-[#3e5219] rounded-full flex items-center justify-center text-white shadow-[3px_3px_8px_rgba(85,107,47,0.25)] hover:bg-[#2c3c0f] active:scale-90 transition-all shrink-0"
-                >
-                  <Play className="w-5 h-5 fill-white ml-0.5" />
-                </button>
-              </div>
-            </motion.article>
-          ))}
+      <section aria-labelledby="language-heading">
+        <div className="flex items-end justify-between mb-4"><div><h3 id="language-heading" className="font-serif text-2xl text-[#29402a]">Choose a language</h3><p className="text-sm text-[#7c8479] mt-1">Start with what you know</p></div><Languages className="w-5 h-5 text-[#a26b3d]" /></div>
+        <div className="grid grid-cols-3 gap-3 sm:gap-4">
+          {languageOptions.map((language) => <button key={language.value} onClick={() => onTabChange('search')} className="group min-h-[92px] sm:min-h-[108px] rounded-2xl bg-[#e8eee1] hover:bg-[#dce7d5] text-left p-4 sm:p-5 transition-colors"><span className="flex items-center justify-center w-10 h-10 rounded-full bg-white text-[#29402a] font-semibold text-sm group-hover:scale-105 transition-transform">{language.mark}</span><span className="block mt-3 text-sm sm:text-base font-semibold text-[#29402a]">{language.label}</span></button>)}
         </div>
       </section>
 
-      {/* Explore Categories Bento Grid */}
-      <section id="section-categories">
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <div>
-            <h2 className="font-serif text-2xl sm:text-3xl font-semibold text-[#1c1b1b] tracking-tight">
-              Explore Categories
-            </h2>
-            <p className="text-xs sm:text-sm text-[#5d5f5f]">
-              Browse collections classified for worship and reflection
-            </p>
-          </div>
-          <button
-            onClick={() => onTabChange('categories')}
-            className="text-xs sm:text-sm font-semibold text-[#3e5219] hover:underline flex items-center gap-1"
-          >
-            Manage
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+      {featured && <section className="relative overflow-hidden rounded-3xl bg-[#29402a] text-white p-6 sm:p-9 min-h-[210px] flex items-end"><div className="absolute inset-0 opacity-30 bg-cover bg-center" style={{ backgroundImage: `url('${featured.coverImage}')` }} /><div className="absolute inset-0 bg-gradient-to-r from-[#29402a] via-[#29402a]/90 to-transparent" /><div className="relative max-w-lg"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#e5b887]">Continue singing</p><h3 className="font-serif text-3xl sm:text-4xl mt-2">{featured.title}</h3><p className="text-white/70 text-sm mt-1">{featured.artist} · {featured.language}</p><div className="flex flex-wrap gap-3 mt-6"><button onClick={() => onSelectSong(featured)} className="inline-flex items-center gap-2 rounded-full bg-white text-[#29402a] px-5 py-2.5 text-sm font-semibold hover:bg-[#f4f1e8]"><Play className="w-4 h-4 fill-current" /> Open lyrics</button><button onClick={readFeatured} className="inline-flex items-center gap-2 rounded-full bg-white/15 text-white px-4 py-2.5 text-sm font-semibold hover:bg-white/25"><Volume2 className="w-4 h-4" /> {isReading ? 'Stop reading' : 'Listen'}</button></div></div></section>}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Worship: Large Bento Card */}
-          {categories.slice(0, 1).map((cat) => (
-            <div
-              key={cat.id}
-              onClick={() => onSelectCategory(cat.id)}
-              className="md:col-span-2 relative h-52 sm:h-64 rounded-2xl overflow-hidden group cursor-pointer soft-card border border-[#e5e7eb]"
-            >
-              <div
-                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                style={{ backgroundImage: `url('${cat.coverImage}')` }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
-              <div className="absolute bottom-5 left-6 right-6 flex items-end justify-between">
-                <div>
-                  <span className="inline-block bg-[#3e5219]/90 backdrop-blur-md text-white text-xs font-semibold px-3 py-1 rounded-full mb-2">
-                    Popular • {cat.trackCount} Tracks
-                  </span>
-                  <h3 className="font-serif text-2xl sm:text-3xl text-white font-bold">
-                    {cat.name}
-                  </h3>
-                  <p className="text-xs text-white/80 line-clamp-1 max-w-md mt-1">
-                    {cat.description}
-                  </p>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center group-hover:bg-[#3e5219] transition-colors">
-                  <ChevronRight className="w-5 h-5" />
-                </div>
-              </div>
-            </div>
-          ))}
+      <section><div className="flex items-center justify-between mb-4"><div><h3 className="font-serif text-2xl text-[#29402a]">Browse the songbook</h3><p className="text-sm text-[#7c8479] mt-1">Simple, searchable, and ready for worship</p></div><button onClick={() => onTabChange('search')} className="text-sm font-semibold text-[#557b55] inline-flex items-center gap-1">See all <ChevronRight className="w-4 h-4" /></button></div><div className="divide-y divide-[#e8e5dc] rounded-2xl bg-white border border-[#e8e5dc] overflow-hidden">{recent.map((song) => <motion.div key={song.id} layout onClick={() => onSelectSong(song)} className="flex items-center gap-3 p-3 sm:p-4 cursor-pointer hover:bg-[#f8f8f3] transition-colors"><img src={song.coverImage} alt="" className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover" /><div className="min-w-0 flex-1"><h4 className="font-semibold text-[#29402a] truncate">{song.title}</h4><p className="text-sm text-[#7c8479] truncate mt-0.5">{song.artist}</p><span className="text-[11px] text-[#a26b3d] font-semibold">{song.language}</span></div><button aria-label={song.isPinned ? `Remove ${song.title} from saved` : `Save ${song.title}`} onClick={(event) => { event.stopPropagation(); onTogglePin(song.id); }} className="p-2 text-[#7c8479] hover:text-[#a26b3d] rounded-full">{song.isPinned ? <Bookmark className="w-5 h-5 fill-current text-[#a26b3d]" /> : <Heart className="w-5 h-5" />}</button><ChevronRight className="w-4 h-4 text-[#b3b7ae]" /></motion.div>)}</div></section>
 
-          {/* Other Categories */}
-          {categories.slice(1, 4).map((cat) => (
-            <div
-              key={cat.id}
-              onClick={() => onSelectCategory(cat.id)}
-              className="relative h-52 sm:h-64 rounded-2xl overflow-hidden group cursor-pointer soft-card border border-[#e5e7eb]"
-            >
-              <div
-                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                style={{ backgroundImage: `url('${cat.coverImage}')` }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
-              <div className="absolute bottom-5 left-6 right-6 flex items-end justify-between">
-                <div>
-                  <span className="inline-block bg-white/20 backdrop-blur-md text-white text-[11px] font-medium px-2.5 py-0.5 rounded-full mb-1.5">
-                    {cat.trackCount} Tracks
-                  </span>
-                  <h3 className="font-serif text-2xl text-white font-bold">{cat.name}</h3>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center group-hover:bg-[#3e5219] transition-colors">
-                  <ChevronRight className="w-4 h-4" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Daily Devotional / Voice Hymn Card (Senior Friendly) */}
-      <section className="bg-white rounded-2xl p-6 soft-card border border-[#e5e7eb] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-[#3e5219]/10 text-[#3e5219] flex items-center justify-center shrink-0">
-            <Sparkles className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#3e5219]">
-              Daily Hymn Meditation
-            </span>
-            <h3 className="font-serif text-xl font-bold text-[#1c1b1b]">
-              "{songs[0]?.title}"
-            </h3>
-            <p className="text-xs text-[#5d5f5f] mt-0.5">
-              "Abide with me; fast falls the eventide; The darkness deepens; Lord, with me abide."
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          <button
-            id="btn-voice-read-hymn"
-            onClick={() => handleReadDailyHymn(songs[0])}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all ${
-              isReadingAloud
-                ? 'bg-[#ba1a1a] text-white animate-pulse'
-                : 'bg-[#3e5219]/10 text-[#3e5219] hover:bg-[#3e5219]/20'
-            }`}
-          >
-            <Volume2 className="w-4 h-4" />
-            <span>{isReadingAloud ? 'Stop Reading' : 'Listen Read Aloud'}</span>
-          </button>
-          <button
-            onClick={() => onSelectSong(songs[0])}
-            className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-[#3e5219] text-white font-semibold text-xs hover:bg-[#2c3c0f] transition-colors"
-          >
-            Open Reader
-          </button>
-        </div>
-      </section>
-
-      {/* Recently Added Songs & Hymns */}
-      <section id="section-recent-songs">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="font-serif text-2xl font-semibold text-[#1c1b1b] tracking-tight">
-              Hymn & Song Catalog
-            </h2>
-            <p className="text-xs text-[#5d5f5f]">
-              Direct access to lyrics and chords in all languages
-            </p>
-          </div>
-          <button
-            onClick={onOpenAddSong}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#3e5219] text-white font-semibold text-xs hover:bg-[#2c3c0f] active:scale-95 transition-all"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Song</span>
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {recentSongs.map((song) => (
-            <div
-              key={song.id}
-              onClick={() => onSelectSong(song)}
-              className="soft-card bg-white rounded-xl p-3.5 flex items-center gap-3.5 hover:-translate-y-0.5 transition-all cursor-pointer group border border-[#e5e7eb]"
-            >
-              <div className="w-14 h-14 rounded-lg bg-[#f0eded] overflow-hidden shrink-0 relative">
-                <img
-                  src={song.coverImage}
-                  alt={song.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                />
-                <div className="absolute inset-0 bg-[#3e5219]/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                  <Play className="w-5 h-5 text-white fill-white" />
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-serif font-semibold text-[#1c1b1b] truncate group-hover:text-[#3e5219] transition-colors text-base">
-                  {song.title}
-                </h4>
-                <p className="text-xs text-[#5d5f5f] truncate mt-0.5">{song.artist}</p>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span className="px-2 py-0.5 rounded bg-[#3e5219]/10 text-[#3e5219] text-[10px] font-bold uppercase tracking-wider">
-                    {song.language}
-                  </span>
-                  <span className="text-[11px] text-[#75796b] font-mono">
-                    Key: {song.defaultKey}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTogglePin(song.id);
-                }}
-                className="text-[#75796b] hover:text-[#3e5219] p-2 shrink-0 transition-colors"
-              >
-                <Bookmark
-                  className={`w-4 h-4 ${song.isPinned ? 'fill-[#3e5219] text-[#3e5219]' : ''}`}
-                />
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
+      <section className="flex flex-wrap gap-2 items-center text-sm text-[#7c8479]"><span>Browse by collection:</span>{categories.slice(0, 4).map((category) => <button key={category.id} onClick={() => onSelectCategory(category.id)} className="rounded-full bg-[#f1f0e9] px-3 py-1.5 text-[#557b55] font-medium hover:bg-[#e8eee1]">{category.name}</button>)}</section>
     </div>
   );
 };

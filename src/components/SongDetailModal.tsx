@@ -195,9 +195,7 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
     }
   };
 
-  const effectiveFontSize = userSettings.seniorMode
-    ? Math.max(userSettings.fontSize, 24)
-    : userSettings.fontSize;
+  const effectiveFontSize = userSettings.fontSize;
 
   return (
     <motion.div
