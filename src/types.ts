@@ -44,5 +44,5 @@ export interface UserSettings {
   hapticFeedback: boolean;
 }
 
-export type TabType = 'home' | 'search' | 'favorites';
+export type TabType = 'home' | 'search' | 'favorites' | 'media';
 export type SongViewMode = 'lyrics' | 'chords' | 'video';

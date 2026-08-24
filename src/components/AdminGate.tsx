@@ -7,9 +7,9 @@ interface AdminGateProps { onClose: () => void; onSuccess: () => void; }
 export const AdminGate: React.FC<AdminGateProps> = ({ onClose, onSuccess }) => {
   const [passcode, setPasscode] = useState('');
   const [error, setError] = useState(false);
-  const submit = (event: React.FormEvent) => {
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (passcode === '7770') { onSuccess(); return; }
+    try { const response = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ passcode }) }); if (response.ok) { onSuccess(); return; } } catch { /* show the same safe error for unavailable API and invalid credentials */ }
     setError(true); setPasscode('');
   };
   return <div className="fixed inset-0 z-[70] bg-[#17241a]/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">

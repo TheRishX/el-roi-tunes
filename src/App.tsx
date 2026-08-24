@@ -11,6 +11,7 @@ import { FavoritesView } from './components/FavoritesView';
 import { SongDetailModal } from './components/SongDetailModal';
 import { AdminGate } from './components/AdminGate';
 import { AdminPanel } from './components/AdminPanel';
+import { MediaLibraryView } from './components/MediaLibraryView';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('home');
@@ -23,24 +24,19 @@ export default function App() {
   const [adminOpen, setAdminOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('All');
 
-  useEffect(() => {
-    setSongs(sqlDb.getSongs());
-    setCategories(sqlDb.getCategories());
-  }, []);
+  useEffect(() => { sqlDb.ready.then(() => { setSongs(sqlDb.getSongs()); setCategories(sqlDb.getCategories()); setSettings(sqlDb.getSettings()); }); }, []);
 
   const refreshSongs = () => setSongs(sqlDb.getSongs());
-  const updateSettings = (changes: Partial<UserSettings>) => setSettings(sqlDb.updateSettings(changes));
+  const updateSettings = (changes: Partial<UserSettings>) => { void sqlDb.updateSettings(changes).then(setSettings); };
   const refreshData = () => { setSongs(sqlDb.getSongs()); setCategories(sqlDb.getCategories()); };
   const selectSong = (song: Song) => {
     setSelectedSong(song);
   };
   const togglePin = (id: string) => {
-    sqlDb.togglePin(id); refreshSongs();
-    if (selectedSong?.id === id) setSelectedSong(sqlDb.getSongById(id) || null);
+    void sqlDb.togglePin(id).then(() => { refreshSongs(); if (selectedSong?.id === id) setSelectedSong(sqlDb.getSongById(id) || null); });
   };
   const toggleFavorite = (id: string) => {
-    sqlDb.toggleFavorite(id); refreshSongs();
-    if (selectedSong?.id === id) setSelectedSong(sqlDb.getSongById(id) || null);
+    void sqlDb.toggleFavorite(id).then(() => { refreshSongs(); if (selectedSong?.id === id) setSelectedSong(sqlDb.getSongById(id) || null); });
   };
   const browseCategory = (id: string) => {
     const category = categories.find((item) => item.id === id);
@@ -48,7 +44,7 @@ export default function App() {
     setCurrentTab('search');
   };
   const openAdminGate = () => setAdminGateOpen(true);
-  const saveSong = (data: Omit<Song, 'id' | 'createdAt' | 'views'>, id?: string) => { if (id) sqlDb.updateSong(id, data); else sqlDb.addSong(data); refreshData(); };
+  const saveSong = (data: Omit<Song, 'id' | 'createdAt' | 'views'>, id?: string) => { void (id ? sqlDb.updateSong(id, data) : sqlDb.addSong(data)).then(refreshData); };
 
   return (
     <div className="min-h-screen bg-[#fbfaf7] text-[#1c2a1f] relative overflow-x-hidden font-sans selection:bg-[#dce7d5] selection:text-[#29402a]">
@@ -59,13 +55,14 @@ export default function App() {
           {currentTab === 'home' && <motion.div key="home" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}><HomeView songs={songs} categories={categories} onSelectSong={selectSong} onSelectCategory={browseCategory} onTabChange={setCurrentTab} onTogglePin={togglePin} /></motion.div>}
           {currentTab === 'search' && <motion.div key="search" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}><SearchView songs={songs} categories={categories} onSelectSong={selectSong} onTogglePin={togglePin} selectedCategory={categoryFilter} onSelectCategory={setCategoryFilter} /></motion.div>}
           {currentTab === 'favorites' && <motion.div key="favorites" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}><FavoritesView songs={songs} onSelectSong={selectSong} onTogglePin={togglePin} onToggleFavorite={toggleFavorite} onTabChange={setCurrentTab} /></motion.div>}
+          {currentTab === 'media' && <motion.div key="media" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}><MediaLibraryView songs={songs} onSelectSong={selectSong} /></motion.div>}
         </AnimatePresence>
       </main>
       <BottomNavBar currentTab={currentTab} onTabChange={setCurrentTab} favoritesCount={songs.filter((song) => song.isPinned || song.isFavorite).length} />
       <SideDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} currentTab={currentTab} onTabChange={setCurrentTab} onOpenSettings={openAdminGate} />
       <AnimatePresence>{selectedSong && <SongDetailModal song={selectedSong} onClose={() => setSelectedSong(null)} onTogglePin={togglePin} onToggleFavorite={toggleFavorite} userSettings={settings} onUpdateSettings={updateSettings} />}</AnimatePresence>
       {adminGateOpen && <AdminGate onClose={() => setAdminGateOpen(false)} onSuccess={() => { setAdminGateOpen(false); setAdminOpen(true); }} />}
-      {adminOpen && <AdminPanel songs={songs} categories={categories} onClose={() => setAdminOpen(false)} onSaveSong={saveSong} onDeleteSong={(id) => { sqlDb.deleteSong(id); refreshData(); }} onAddCategory={(data) => { sqlDb.addCategory(data); refreshData(); }} onDeleteCategory={(id) => { sqlDb.deleteCategory(id); refreshData(); }} />}
+      {adminOpen && <AdminPanel songs={songs} categories={categories} onClose={() => setAdminOpen(false)} onSaveSong={saveSong} onDeleteSong={(id) => { void sqlDb.deleteSong(id).then(refreshData); }} onAddCategory={(data) => { void sqlDb.addCategory(data).then(refreshData); }} onDeleteCategory={(id) => { void sqlDb.deleteCategory(id).then(refreshData); }} />}
     </div>
   );
 }

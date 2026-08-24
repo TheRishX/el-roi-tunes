@@ -79,6 +79,17 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
           >
             Favorites
           </button>
+          <button
+            id="nav-link-media"
+            onClick={() => onTabChange('media')}
+            className={`font-sans text-sm font-medium px-4 py-2 rounded-full transition-colors ${
+              currentTab === 'media'
+                ? 'text-[#29402a] font-semibold bg-white shadow-sm'
+                : 'text-[#687166] hover:text-[#29402a]'
+            }`}
+          >
+            Watch & listen
+          </button>
         </nav>
 
         {/* Private admin entry */}
