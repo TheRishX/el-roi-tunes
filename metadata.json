@@ -1,0 +1,6 @@
+{
+  "name": "El Roi Tunes - Minimalist Lyrics & Chords",
+  "description": "A minimalist, senior-friendly lyrics and chords web app with iOS/Material styling in olive green and alabaster, featuring auto-scroll, transposer, audio sync, and database management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
