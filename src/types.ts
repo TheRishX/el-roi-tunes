@@ -27,6 +27,8 @@ export interface MediaItem {
   id: string;
   url: string;
   title: string;
+  author?: string;
+  thumbnailUrl?: string;
   createdAt: string;
 }
 

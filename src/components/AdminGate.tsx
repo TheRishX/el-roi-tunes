@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { LockKeyhole, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { api } from '../services/sqlDb';
@@ -8,6 +8,7 @@ interface AdminGateProps { onClose: () => void; onSuccess: () => void; }
 export const AdminGate: React.FC<AdminGateProps> = ({ onClose, onSuccess }) => {
   const [passcode, setPasscode] = useState('');
   const [error, setError] = useState(false);
+  useEffect(() => { fetch(api('/admin/session'), { credentials: 'include' }).then((response) => response.json()).then((data) => { if (data.authenticated) onSuccess(); }).catch(() => undefined); }, [onSuccess]);
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     try { const response = await fetch(api('/admin/login'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ passcode }) }); if (response.ok) { onSuccess(); return; } } catch { /* show the same safe error for unavailable API and invalid credentials */ }

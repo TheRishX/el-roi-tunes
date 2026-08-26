@@ -69,6 +69,17 @@ export default function App() {
   const updateSettings = (changes: Partial<UserSettings>) => { void sqlDb.updateSettings(changes).then(setSettings); };
   const refreshData = () => { setSongs(sqlDb.getSongs()); setCategories(sqlDb.getCategories()); };
   const addMedia = async (url: string) => { await sqlDb.addMedia(url); setMediaItems(sqlDb.getMediaItems()); };
+  const deleteMedia = async (id: string) => { await sqlDb.deleteMedia(id); setMediaItems(sqlDb.getMediaItems()); };
+  const removeSongVideo = async (song: Song) => {
+    const links = (song.mediaLinks?.length ? song.mediaLinks : [song.videoUrl, song.audioUrl].filter((link): link is string => Boolean(link))).filter((link) => !/youtube\.com|youtu\.be/i.test(link));
+    await sqlDb.updateSong(song.id, { videoUrl: '', audioUrl: links.find((link) => /audio|\.mp3(?:$|\?)/i.test(link)) || '', mediaLinks: links });
+    setSongs(sqlDb.getSongs());
+  };
+  const addLyrics = async (item: MediaItem, draft: { title: string; artist: string; language: string; lyrics: string }) => {
+    await sqlDb.addSong({ title: draft.title.trim(), artist: draft.artist.trim(), category: categories[0]?.name || 'Worship', language: draft.language, coverImage: item.thumbnailUrl || '', lyrics: draft.lyrics.trim(), chordsLyrics: '', defaultKey: 'C', bpm: 72, tempo: '4/4', videoUrl: item.url, audioUrl: '', mediaLinks: [item.url], isPinned: false, isFavorite: false, year: new Date().getFullYear(), status: 'Approved', uploadedBy: 'Admin', timestamps: [] });
+    await sqlDb.deleteMedia(item.id);
+    setSongs(sqlDb.getSongs()); setMediaItems(sqlDb.getMediaItems());
+  };
   const navigateTab = (tab: TabType) => {
     const current = routeRef.current;
     if (current.tab === tab && !current.overlay) return;
@@ -131,7 +142,7 @@ export default function App() {
           {currentTab === 'home' && <motion.div key="home" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}><HomeView songs={songs} categories={categories} onSelectSong={selectSong} onSelectCategory={browseCategory} onTabChange={navigateTab} onTogglePin={togglePin} /></motion.div>}
           {currentTab === 'search' && <motion.div key="search" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}><SearchView songs={songs} categories={categories} onSelectSong={selectSong} onTogglePin={togglePin} selectedCategory={categoryFilter} onSelectCategory={setCategoryFilter} /></motion.div>}
           {currentTab === 'favorites' && <motion.div key="favorites" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}><FavoritesView songs={songs} onSelectSong={selectSong} onTogglePin={togglePin} onToggleFavorite={toggleFavorite} onTabChange={navigateTab} /></motion.div>}
-          {currentTab === 'media' && <motion.div key="media" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}><MediaLibraryView songs={songs} mediaItems={mediaItems} onSelectSong={selectSong} onAddMedia={addMedia} /></motion.div>}
+          {currentTab === 'media' && <motion.div key="media" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}><MediaLibraryView songs={songs} mediaItems={mediaItems} onSelectSong={selectSong} onAddMedia={addMedia} onDeleteMedia={deleteMedia} onRemoveSongVideo={removeSongVideo} onAddLyrics={addLyrics} /></motion.div>}
         </AnimatePresence>
       </main>
       <BottomNavBar currentTab={currentTab} onTabChange={navigateTab} favoritesCount={songs.filter((song) => song.isPinned || song.isFavorite).length} />
