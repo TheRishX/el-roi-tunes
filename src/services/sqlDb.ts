@@ -18,7 +18,7 @@ class SqlDatabaseService {
 
   private async request(path: string, options: RequestInit = {}) {
     const response = await fetch(api(path), { ...options, credentials: 'include', headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
-    if (!response.ok) throw new Error((await response.text()) || `Request failed (${response.status})`);
+    if (!response.ok) { const message = await response.text(); try { throw new Error(JSON.parse(message).error || `Request failed (${response.status})`); } catch (error) { if (error instanceof Error && error.message !== message) throw error; throw new Error(message || `Request failed (${response.status})`); } }
     return response.status === 204 ? null : response.json();
   }
   public async reload() {
@@ -39,6 +39,7 @@ class SqlDatabaseService {
   public async addSong(songData: Omit<Song, 'id' | 'createdAt' | 'views'>) { const song: Song = await this.request('/songs', { method: 'POST', body: JSON.stringify(songData) }); await this.reload(); return song; }
   public async addMedia(url: string) { const media: MediaItem = await this.request('/media', { method: 'POST', body: JSON.stringify({ url }) }); await this.reload(); return media; }
   public async deleteMedia(id: string) { await this.request(`/media/${encodeURIComponent(id)}`, { method: 'DELETE' }); await this.reload(); }
+  public async deleteSongVideo(id: string, mediaLinks: string[], audioUrl: string) { await this.request(`/songs/${encodeURIComponent(id)}/media`, { method: 'DELETE', body: JSON.stringify({ mediaLinks, audioUrl }) }); await this.reload(); }
   public async updateSong(id: string, updates: Partial<Song>) { const song: Song = await this.request(`/songs/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(updates) }); await this.reload(); return song; }
   public async deleteSong(id: string) { await this.request(`/songs/${encodeURIComponent(id)}`, { method: 'DELETE' }); await this.reload(); return true; }
   public async addCategory(category: Omit<Category, 'id' | 'trackCount'>) { const created = await this.request('/categories', { method: 'POST', body: JSON.stringify(category) }); await this.reload(); return created; }

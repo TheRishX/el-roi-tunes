@@ -11,7 +11,7 @@ import { FavoritesView } from './components/FavoritesView';
 import { SongDetailModal } from './components/SongDetailModal';
 import { AdminGate } from './components/AdminGate';
 import { AdminPanel } from './components/AdminPanel';
-import { MediaLibraryView } from './components/MediaLibraryView';
+import { LyricsDraft, MediaLibraryView } from './components/MediaLibraryView';
 
 type AppOverlay = 'drawer' | 'song' | 'adminGate' | 'admin';
 type AppHistoryState = { app: true; tab: TabType; overlay?: AppOverlay; songId?: string; rootGuard?: boolean };
@@ -71,12 +71,13 @@ export default function App() {
   const addMedia = async (url: string) => { await sqlDb.addMedia(url); setMediaItems(sqlDb.getMediaItems()); };
   const deleteMedia = async (id: string) => { await sqlDb.deleteMedia(id); setMediaItems(sqlDb.getMediaItems()); };
   const removeSongVideo = async (song: Song) => {
-    const links = (song.mediaLinks?.length ? song.mediaLinks : [song.videoUrl, song.audioUrl].filter((link): link is string => Boolean(link))).filter((link) => !/youtube\.com|youtu\.be/i.test(link));
-    await sqlDb.updateSong(song.id, { videoUrl: '', audioUrl: links.find((link) => /audio|\.mp3(?:$|\?)/i.test(link)) || '', mediaLinks: links });
+    const remainingLinks = (song.mediaLinks?.length ? song.mediaLinks : [song.videoUrl, song.audioUrl].filter((link): link is string => Boolean(link))).filter((link) => !/youtube\.com|youtu\.be/i.test(link));
+    const audioUrl = remainingLinks.find((link) => /audio|\.mp3(?:$|\?)/i.test(link)) || '';
+    await sqlDb.deleteSongVideo(song.id, remainingLinks, audioUrl);
     setSongs(sqlDb.getSongs());
   };
-  const addLyrics = async (item: MediaItem, draft: { title: string; artist: string; language: string; lyrics: string }) => {
-    await sqlDb.addSong({ title: draft.title.trim(), artist: draft.artist.trim(), category: categories[0]?.name || 'Worship', language: draft.language, coverImage: item.thumbnailUrl || '', lyrics: draft.lyrics.trim(), chordsLyrics: '', defaultKey: 'C', bpm: 72, tempo: '4/4', videoUrl: item.url, audioUrl: '', mediaLinks: [item.url], isPinned: false, isFavorite: false, year: new Date().getFullYear(), status: 'Approved', uploadedBy: 'Admin', timestamps: [] });
+  const addLyrics = async (item: MediaItem, draft: LyricsDraft) => {
+    await sqlDb.addSong({ title: draft.title.trim(), artist: draft.artist.trim(), category: categories[0]?.name || 'Worship', language: draft.language, coverImage: item.thumbnailUrl || '', lyrics: draft.lyricsHindi.trim() || draft.lyricsHinglish.trim(), lyricsHindi: draft.lyricsHindi.trim(), lyricsHinglish: draft.lyricsHinglish.trim(), chordsLyrics: '', defaultKey: 'C', bpm: 72, tempo: '4/4', videoUrl: item.url, audioUrl: '', mediaLinks: [item.url], isPinned: false, isFavorite: false, year: new Date().getFullYear(), status: 'Approved', uploadedBy: 'Admin', timestamps: [] });
     await sqlDb.deleteMedia(item.id);
     setSongs(sqlDb.getSongs()); setMediaItems(sqlDb.getMediaItems());
   };

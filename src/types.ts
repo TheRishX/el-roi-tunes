@@ -6,6 +6,8 @@ export interface Song {
   language: 'English' | 'Hindi' | 'Nepali' | string;
   coverImage: string;
   lyrics: string;
+  lyricsHindi?: string;
+  lyricsHinglish?: string;
   chordsLyrics: string;
   defaultKey: string;
   bpm?: number;

@@ -63,6 +63,7 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const [isFullPage, setIsFullPage] = useState<boolean>(false);
+  const [lyricFormat, setLyricFormat] = useState<'hindi' | 'hinglish'>('hindi');
 
   // Audio / Karaoke Sync state
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
@@ -79,6 +80,11 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
   // Transposed lyrics & chords
   const currentChordsText = transposeChordsText(song.chordsLyrics, semitones);
   const parsedLines = parseChordLyrics(currentChordsText);
+  const hasHindiLyrics = Boolean(song.lyricsHindi?.trim());
+  const hasHinglishLyrics = Boolean(song.lyricsHinglish?.trim());
+  const displayedLyrics = lyricFormat === 'hinglish' && hasHinglishLyrics
+    ? song.lyricsHinglish!
+    : hasHindiLyrics ? song.lyricsHindi! : song.lyrics;
   const mediaLinks = song.mediaLinks?.length
     ? song.mediaLinks
     : [song.videoUrl, song.audioUrl].filter((link): link is string => Boolean(link));
@@ -139,7 +145,7 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
   }, [isPlayingAudio, song.timestamps]);
 
   const handleCopy = () => {
-    const content = viewMode === 'chords' ? currentChordsText : song.lyrics;
+    const content = viewMode === 'chords' ? currentChordsText : displayedLyrics;
     navigator.clipboard.writeText(`${song.title} - ${song.artist}\n\n${content}`);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
@@ -167,7 +173,7 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
       setIsSpeaking(false);
     } else {
       setIsSpeaking(true);
-      speechReader.speakLyrics(song.lyrics, () => setIsSpeaking(false));
+      speechReader.speakLyrics(displayedLyrics, () => setIsSpeaking(false));
     }
   };
 
@@ -370,6 +376,13 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
           </button>
         </section>}
 
+        {!isFullPage && viewMode === 'lyrics' && (hasHindiLyrics || hasHinglishLyrics) && (
+          <section className="flex items-center justify-center gap-2">
+            {hasHindiLyrics && <button onClick={() => setLyricFormat('hindi')} className={`rounded-full px-4 py-2 text-xs font-semibold ${lyricFormat === 'hindi' ? 'bg-[#3e5219] text-white' : 'border border-[#c5c8b8] bg-white text-[#45483c]'}`}>Hindi</button>}
+            {hasHinglishLyrics && <button onClick={() => setLyricFormat('hinglish')} className={`rounded-full px-4 py-2 text-xs font-semibold ${lyricFormat === 'hinglish' ? 'bg-[#3e5219] text-white' : 'border border-[#c5c8b8] bg-white text-[#45483c]'}`}>Hinglish</button>}
+          </section>
+        )}
+
         {/* Chords Transposer Tool Bar (When in Chords mode) */}
         {!isFullPage && viewMode === 'chords' && (
           <motion.div
@@ -517,7 +530,7 @@ export const SongDetailModal: React.FC<SongDetailModalProps> = ({
                   userSettings.fontFamily === 'serif' ? 'font-serif' : 'font-sans'
                 }`}
               >
-                {song.lyrics}
+                {displayedLyrics}
               </div>
             ) : (
               /* Rich Chords & Lyrics Display */
