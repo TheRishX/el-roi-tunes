@@ -23,6 +23,13 @@ export interface Song {
   timestamps?: { time: number; text: string }[];
 }
 
+export interface MediaItem {
+  id: string;
+  url: string;
+  title: string;
+  createdAt: string;
+}
+
 export interface Category {
   id: string;
   name: string;
