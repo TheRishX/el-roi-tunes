@@ -1,10 +1,10 @@
-const CACHE = 'el-roi-tunes-v3';
+const CACHE = 'el-roi-tunes-v4';
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll([
     '/',
     '/index.html',
     '/manifest.webmanifest',
-    '/hebrew-lyre-logo.png?v=2',
+    '/app-icon.png?v=3',
   ])));
   self.skipWaiting();
 });
