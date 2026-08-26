@@ -36,8 +36,9 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
           <button
             id="brand-logo-btn"
             onClick={() => onTabChange('home')}
-            className="text-left group cursor-pointer focus:outline-none"
+            className="text-left group cursor-pointer focus:outline-none flex items-center gap-2.5"
           >
+            <img src="/hebrew-lyre-logo.png" alt="" aria-hidden="true" className="w-9 h-9 object-contain" />
             <h1 className="font-serif text-[22px] sm:text-2xl font-semibold tracking-tight text-[#29402a] group-hover:opacity-90 transition-opacity">
               El Roi <span className="text-[#a26b3d]">Tunes</span>
             </h1>
