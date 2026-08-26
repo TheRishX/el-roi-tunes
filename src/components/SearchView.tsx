@@ -24,7 +24,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
   const [selectedLanguage, setSelectedLanguage] = useState<string>('All');
   const [activeCategory, setActiveCategory] = useState<string>(selectedCategory || 'All');
 
-  const languages = ['All', 'Hindi', 'English', 'Nepali', 'Spanish', 'Portuguese'];
+  const languages = ['All', 'Hindi', 'English', 'Nepali'];
 
   const filteredSongs = useMemo(() => {
     return songs.filter((song) => {

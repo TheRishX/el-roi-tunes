@@ -3,7 +3,7 @@ export interface Song {
   title: string;
   artist: string;
   category: string;
-  language: 'English' | 'Hindi' | 'Nepali' | 'Spanish' | 'Portuguese' | string;
+  language: 'English' | 'Hindi' | 'Nepali' | string;
   coverImage: string;
   lyrics: string;
   chordsLyrics: string;
