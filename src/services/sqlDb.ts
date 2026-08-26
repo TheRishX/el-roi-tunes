@@ -2,6 +2,7 @@ import { Category, MediaItem, Song, UserSettings } from '../types';
 
 export const DEFAULT_USER_SETTINGS: UserSettings = { fontSize: 18, fontFamily: 'serif', themeMode: 'light', lineSpacing: 'relaxed', autoScrollSpeed: 3, showChordDiagrams: true, hapticFeedback: true };
 const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const CACHE_KEY = 'el-roi-tunes-data-v1';
 export const api = (path: string) => `${API_URL}/api${path}`;
 
 class SqlDatabaseService {
@@ -10,10 +11,25 @@ class SqlDatabaseService {
   private mediaItems: MediaItem[] = [];
   private settings: UserSettings = DEFAULT_USER_SETTINGS;
   public readonly ready: Promise<void>;
-  constructor() { this.ready = this.init(); }
+  constructor() { this.restoreCache(); this.ready = this.init(); }
+
+  private restoreCache() {
+    try {
+      const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+      if (!cached) return;
+      this.songs = cached.songs || [];
+      this.categories = cached.categories || [];
+      this.mediaItems = cached.mediaItems || [];
+      this.settings = { ...DEFAULT_USER_SETTINGS, ...(cached.settings || {}) };
+    } catch { /* A damaged cache should never prevent the online database from loading. */ }
+  }
+
+  private cacheData() {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ songs: this.songs, categories: this.categories, mediaItems: this.mediaItems, settings: this.settings, savedAt: Date.now() })); } catch { /* Storage may be unavailable or full; online sync still works. */ }
+  }
 
   private async init() {
-    await this.reload();
+    try { await this.reload(); } catch (error) { if (!this.songs.length && !this.categories.length && !this.mediaItems.length) throw error; }
   }
 
   private async request(path: string, options: RequestInit = {}) {
@@ -27,6 +43,16 @@ class SqlDatabaseService {
     this.categories = data.categories || [];
     this.mediaItems = data.mediaItems || [];
     this.settings = { ...DEFAULT_USER_SETTINGS, ...(data.settings || {}) };
+    this.cacheData();
+  }
+
+  public startAutoSync(onUpdate: () => void) {
+    const sync = () => { if (navigator.onLine === false) return; void this.reload().then(onUpdate).catch(() => undefined); };
+    window.addEventListener('online', sync);
+    window.addEventListener('focus', sync);
+    document.addEventListener('visibilitychange', sync);
+    const interval = window.setInterval(sync, 30000);
+    return () => { window.removeEventListener('online', sync); window.removeEventListener('focus', sync); document.removeEventListener('visibilitychange', sync); window.clearInterval(interval); };
   }
   public getSongs() { return [...this.songs]; }
   public getCategories() { return [...this.categories]; }
@@ -36,7 +62,7 @@ class SqlDatabaseService {
   public async updateSettings(changes: Partial<UserSettings>) { const settings = await this.request('/settings', { method: 'PUT', body: JSON.stringify({ ...this.settings, ...changes }) }); this.settings = { ...DEFAULT_USER_SETTINGS, ...settings }; return this.getSettings(); }
   public async togglePin(id: string) { return this.updateSong(id, { isPinned: !this.getSongById(id)?.isPinned }); }
   public async toggleFavorite(id: string) { return this.updateSong(id, { isFavorite: !this.getSongById(id)?.isFavorite }); }
-  public async addSong(songData: Omit<Song, 'id' | 'createdAt' | 'views'>) { const song: Song = await this.request('/songs', { method: 'POST', body: JSON.stringify(songData) }); await this.reload(); return song; }
+  public async addSong(songData: Omit<Song, 'id' | 'createdAt' | 'views'> & { allowDuplicate?: boolean }) { const song: Song = await this.request('/songs', { method: 'POST', body: JSON.stringify(songData) }); await this.reload(); return song; }
   public async addMedia(url: string) { const media: MediaItem = await this.request('/media', { method: 'POST', body: JSON.stringify({ url }) }); await this.reload(); return media; }
   public async deleteMedia(id: string) { await this.request(`/media/${encodeURIComponent(id)}`, { method: 'DELETE' }); await this.reload(); }
   public async deleteSongVideo(id: string, mediaLinks: string[], audioUrl: string) { await this.request(`/songs/${encodeURIComponent(id)}/media`, { method: 'DELETE', body: JSON.stringify({ mediaLinks, audioUrl }) }); await this.reload(); }
